@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spreadsheet To-Do List</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 5px;
+        }
+
+        .completed-task {
+            text-decoration: line-through;
+        }
+
+        #newTaskInput {
+            width: 100%;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        #addTaskBtn, #refreshBtn, #clearCompletedBtn {
+            width: 100%;
+            margin-top: 10px;
+            padding: 8px;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+
+        #addTaskBtn, #refreshBtn {
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+        }
+
+        #clearCompletedBtn {
+            background-color: #ff6666;
+            color: #fff;
+            border: none;
+        }
+
+        @media only screen and (min-width: 600px) {
+            /* Larger screens */
+            #newTaskInput, #addTaskBtn, #refreshBtn, #clearCompletedBtn {
+                width: 70%;
+                display: inline-block;
+                margin-right: 10px;
+            }
+
+            #addTaskBtn, #refreshBtn, #clearCompletedBtn {
+                width: 20%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Spreadsheet To-Do List</h2>
+
+    <label for="completedTaskDropdown">Tasks:</label>
+    <select id="completedTaskDropdown" onchange="filterTasks()">
+        <option value="all">All Tasks</option>
+        <option value="completed">Completed Tasks</option>
+        <option value="incomplete">Incomplete Tasks</option>
+    </select>
+
+    <table id="taskTable">
+        <tbody>
+            <!-- Tasks will be dynamically added here -->
+        </tbody>
+    </table>
+
+    <form id="newTaskForm">
+        <input type="text" id="newTaskInput" placeholder="Enter new task">
+        <button type="button" id="addTaskBtn" onclick="addTask()">Add Task</button>
+    </form>
+
+    <button type="button" id="refreshBtn" onclick="refreshPage()">Refresh</button>
+    <button type="button" id="clearCompletedBtn" onclick="clearCompletedTasks()">Clear Completed Tasks</button>
+
+    <script>
+        // Load tasks from localStorage on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            loadTasks();
+        });
+
+        function loadTasks() {
+            var taskTable = document.getElementById('taskTable');
+            var savedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+            savedTasks.forEach(function (task) {
+                var newRow = document.createElement('tr');
+                newRow.innerHTML = '<td><input type="checkbox" onclick="toggleTaskStatus(this)"> ' + task.description + '</td>';
+                newRow.querySelector('input').checked = task.completed;
+                taskTable.querySelector('tbody').appendChild(newRow);
+                newRow.classList.toggle('completed-task', task.completed);
+            });
+        }
+
+        function saveTasks() {
+            var taskRows = document.querySelectorAll('#taskTable tbody tr');
+            var tasks = [];
+
+            taskRows.forEach(function (row) {
+                tasks.push({
+                    description: row.textContent.trim(),
+                    completed: row.querySelector('input').checked
+                });
+            });
+
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function addTask() {
+            var taskTable = document.getElementById('taskTable');
+            var input = document.getElementById('newTaskInput').value;
+
+            if (input.trim() !== '') {
+                var newRow = document.createElement('tr');
+                newRow.innerHTML = '<td><input type="checkbox" onclick="toggleTaskStatus(this)"> ' + input + '</td>';
+                taskTable.querySelector('tbody').appendChild(newRow);
+                document.getElementById('newTaskInput').value = '';
+
+                // Save tasks to localStorage after adding a new task
+                saveTasks();
+            }
+        }
+
+        function toggleTaskStatus(checkbox) {
+            // Update the task status and save tasks to localStorage
+            checkbox.closest('tr').classList.toggle('completed-task', checkbox.checked);
+            saveTasks();
+        }
+
+        function filterTasks() {
+            var taskRows = document.querySelectorAll('#taskTable tbody tr');
+            var filter = document.getElementById('completedTaskDropdown').value;
+
+            taskRows.forEach(function (row) {
+                if (filter === 'all' ||
+                    (filter === 'completed' && row.classList.contains('completed-task')) ||
+                    (filter === 'incomplete' && !row.classList.contains('completed-task'))) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function clearCompletedTasks() {
+            var completedTasks = document.querySelectorAll('.completed-task');
+            completedTasks.forEach(function (task) {
+                task.remove();
+            });
+
+            // Save tasks to localStorage after clearing completed tasks
+            saveTasks();
+        }
+
+        function refreshPage() {
+            location.reload();
+        }
+    </script>
+
+</body>
+</html>
